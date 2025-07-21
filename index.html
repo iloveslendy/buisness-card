@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>📦 Justin's Paket-Tracker</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+    input, button {
+      padding: 10px;
+      width: 100%;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>📦 Paket verfolgen</h1>
+  <input id="tn" placeholder="Sendungsnummer eingeben" />
+  <button onclick="track()">Verfolgen</button>
+  <pre id="output">🔍 Bitte Sendungsnummer eingeben und „Verfolgen“ klicken.</pre>
+
+  <script>
+    async function track() {
+      const tn = document.getElementById("tn").value.trim();
+      const output = document.getElementById("output");
+
+      if (!tn) {
+        output.textContent = "⚠️ Bitte eine Sendungsnummer eingeben.";
+        return;
+      }
+
+      output.textContent = "⏳ Suche läuft...";
+
+      try {
+        const res = await fetch("https://justin-parcel-tracker.glitch.me/api/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tracking_number: tn })
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          output.textContent = "❌ Fehler: " + JSON.stringify(data.error, null, 2);
+          return;
+        }
+
+        output.textContent = "✅ " + data.carrier_name + "\n\n" + 
+          "📍 Status: " + data.status + "\n\n" +
+          "📦 Verlauf:\n" + 
+          data.events.map(e => `${e.date} – ${e.location}: ${e.event}`).join("\n");
+      } catch (e) {
+        output.textContent = "❌ Verbindungsfehler: " + e.message;
+      }
+    }
+  </script>
+</body>
+</html>
